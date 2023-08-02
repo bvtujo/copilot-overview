@@ -45,28 +45,31 @@ func setUpDB(sess *session.Session) *DDB {
 	return &DDB{*ddbClient, table}
 }
 
-func (d *DDB) list() {
-	d.client.Scan(&dynamodb.ScanInput{
-		ExpressionAttributeNames:  nil,
-		ExpressionAttributeValues: nil,
-		FilterExpression:          nil,
-		IndexName:                 nil,
-		Limit:                     nil,
-		ProjectionExpression:      nil,
-		ReturnConsumedCapacity:    nil,
-		ScanFilter:                nil,
-		Segment:                   nil,
-		Select:                    nil,
-		TableName:                 aws.String(d.table),
-		TotalSegments:             nil,
+func (d *DDB) list(n int) ([]models.Item, error) {
+	limit := int64(n)
+	if n < 1 {
+		limit = 10
+	}
+	resp, err := d.client.Scan(&dynamodb.ScanInput{
+		Limit:     aws.Int64(limit),
+		Select:    aws.String(dynamodb.SelectAllAttributes),
+		TableName: aws.String(d.table),
 	})
+	if err != nil {
+		return nil, err
+	}
+	items := make([]models.Item, 0, len(resp.Items))
+	for _, i := range resp.Items {
+		items = append(items, models.NewItemFromDDB(i))
+	}
+	return items, nil
 }
 
 func main() {
 	r := gin.Default()
 	r.Use(gin.Logger())
 	mySession := session.Must(session.NewSession())
-
+	ddbClient := setUpDB(mySession)
 	snsClient, topicARN, err := setUpSNS(mySession)
 	if err != nil {
 		panic(err.Error())
@@ -90,6 +93,8 @@ func main() {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
+		fmt.Println("sending message with body")
+		fmt.Println(dataBytes)
 		_, err = snsClient.Publish(&sns.PublishInput{
 			Message:  aws.String(string(dataBytes)),
 			TopicArn: aws.String(topicARN),
@@ -103,7 +108,24 @@ func main() {
 	})
 
 	r.GET("/list", func(c *gin.Context) {
-		client := setUpDB()
+		nItems, err := strconv.Atoi(c.DefaultQuery("n", "0"))
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+		items, err := ddbClient.list(nItems)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		bytes, err := json.Marshal(items)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		c.Data(http.StatusOK, "application/json", bytes)
 	})
 
 	r.Run(":8080")

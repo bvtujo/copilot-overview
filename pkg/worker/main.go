@@ -11,6 +11,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -57,33 +58,57 @@ func (l *Listener) listen() {
 	}
 }
 
+type SQSMessage struct {
+	Body SNSMessage `json:"Body"`
+}
+
+type SNSMessage struct {
+	Type      string `json:"Type,omitempty"`
+	MessageId string `json:"MessageId,omitempty"`
+	Message   string `json:"Message,omitempty"`
+}
+
 func (l *Listener) processMessage(message *sqs.Message) {
-	var msg models.Message
-	if err := json.Unmarshal([]byte(aws.StringValue(message.Body)), &msg); err != nil {
+	var temp SNSMessage
+	if err := json.Unmarshal([]byte(aws.StringValue(message.Body)), &temp); err != nil {
+		fmt.Println("message", aws.StringValue(message.Body))
 		fmt.Println(fmt.Errorf("process message with id %s: %w", aws.StringValue(message.MessageId), err))
 		return
+	}
+	data := temp.Message
+	data = strings.ReplaceAll(data, `\"`, `"`)
+	var msg models.Message
+	err := json.Unmarshal([]byte(data), &msg)
+	if err != nil {
+		fmt.Println(fmt.Errorf("unmarshal message %v: %w", data, err))
 	}
 	// Chew on message.
 	sleepTime := rand.NormFloat64()*math.Sqrt(float64(msg.Chewiness)) + float64(msg.Chewiness)
 	time.Sleep(time.Duration(float64(time.Second) * sleepTime))
+	fmt.Println("inserting item:")
+	fmt.Println(msg)
 
-	_, err := l.ddb.PutItem(&dynamodb.PutItemInput{
+	ddbItem := &dynamodb.PutItemInput{
 		Item: map[string]*dynamodb.AttributeValue{
-			"id": &dynamodb.AttributeValue{
+			"id": {
 				S: aws.String(msg.Id),
 			},
-			"timestamp": &dynamodb.AttributeValue{
+			"timestamp": {
 				S: aws.String(fmt.Sprintf("%v", time.Now().Unix())),
 			},
-			"processing_time": &dynamodb.AttributeValue{
+			"processing_time": {
 				N: aws.String(fmt.Sprintf("%v", sleepTime)),
 			},
-			"data": &dynamodb.AttributeValue{
+			"chewiness": {
+				N: aws.String(fmt.Sprintf("%v", msg.Chewiness)),
+			},
+			"data": {
 				S: aws.String(msg.Data),
 			},
 		},
 		TableName: aws.String(l.table),
-	})
+	}
+	_, err = l.ddb.PutItem(ddbItem)
 	if err != nil {
 		fmt.Println(fmt.Errorf("put ddb item with id %s and data %q: %w", msg.Id, msg.Data, err))
 		return
