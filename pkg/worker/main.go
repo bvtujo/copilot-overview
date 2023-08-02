@@ -113,4 +113,9 @@ func (l *Listener) processMessage(message *sqs.Message) {
 		fmt.Println(fmt.Errorf("put ddb item with id %s and data %q: %w", msg.Id, msg.Data, err))
 		return
 	}
+	l.client.DeleteMessage(&sqs.DeleteMessageInput{
+		QueueUrl:      aws.String(l.queue),
+		ReceiptHandle: message.ReceiptHandle,
+	})
+	fmt.Printf("processed message in %v seconds\n", sleepTime)
 }

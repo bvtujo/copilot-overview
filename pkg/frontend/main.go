@@ -127,6 +127,9 @@ func main() {
 
 		c.Data(http.StatusOK, "application/json", bytes)
 	})
+	r.DELETE("/clear", func(c *gin.Context) {
+
+	})
 
 	r.Run(":8080")
 }
