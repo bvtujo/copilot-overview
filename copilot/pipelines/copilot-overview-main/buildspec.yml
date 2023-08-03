@@ -14,8 +14,10 @@ phases:
       - chmod +x ./copilot-linux
   build:
     commands:
-      - echo "Run your tests"
-      # - make test
+      - echo "building static site"
+      - cd static/my-copilot-static-site
+      - npm ci
+      - npm run build
   post_build:
     commands:
       - ls -l

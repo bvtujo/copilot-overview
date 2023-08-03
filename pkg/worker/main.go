@@ -85,7 +85,7 @@ func (l *Listener) processMessage(message *sqs.Message) {
 	// Chew on message.
 	sleepTime := rand.NormFloat64()*math.Sqrt(float64(msg.Chewiness)) + float64(msg.Chewiness)
 	time.Sleep(time.Duration(float64(time.Second) * sleepTime))
-	fmt.Println(fmt.Sprintf("inserting item after %d seconds: %"))
+	fmt.Println(fmt.Sprintf("inserting item after %d seconds", sleepTime))
 
 	ddbItem := &dynamodb.PutItemInput{
 		Item: map[string]*dynamodb.AttributeValue{

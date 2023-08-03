@@ -47,10 +47,10 @@ func setUpDB(sess *session.Session) *DDB {
 
 func (d *DDB) deleteAll() error {
 	resp, err := d.client.Scan(&dynamodb.ScanInput{
-		Limit:                aws.Int64(10000),
-		Select:               aws.String(dynamodb.SelectAllAttributes),
-		TableName:            aws.String(d.table),
-		ProjectionExpression: aws.String("timestamp, id"),
+		Limit:           aws.Int64(10000),
+		Select:          aws.String(dynamodb.SelectSpecificAttributes),
+		AttributesToGet: aws.StringSlice([]string{"timestamp", "id"}),
+		TableName:       aws.String(d.table),
 	})
 	if err != nil {
 		return err

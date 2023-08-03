@@ -22,14 +22,14 @@ Resources:
           AttributeType: "N"
       BillingMode: PAY_PER_REQUEST
       KeySchema:
-        - AttributeName: id
-          KeyType: HASH
         - AttributeName: timestamp
+          KeyType: HASH
+        - AttributeName: id
           KeyType: RANGE
       LocalSecondaryIndexes:
         - IndexName: processing_time
           KeySchema:
-            - AttributeName: id
+            - AttributeName: timestamp
               KeyType: HASH
             - AttributeName: processing_time
               KeyType: RANGE
