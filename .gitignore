@@ -3,4 +3,3 @@ bin
 static/my-copilot-static-site/public
 static/my-copilot-static-site/.cache/
 static/my-copilot-static-site/src/gatsby-types.d.ts
-**/package_lock.json
