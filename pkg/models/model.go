@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"strconv"
 )
@@ -20,13 +21,13 @@ type Item struct {
 }
 
 func NewItemFromDDB(ddbItem map[string]*dynamodb.AttributeValue) Item {
-	processingTime, _ := strconv.ParseFloat(ddbItem["processing_time"].String(), 64)
-	chewiness, _ := strconv.Atoi(ddbItem["chewiness"].String())
+	processingTime, _ := strconv.ParseFloat(aws.StringValue(ddbItem["processing_time"].N), 64)
+	chewiness, _ := strconv.Atoi(aws.StringValue(ddbItem["chewiness"].N))
 	return Item{
-		Id:             ddbItem["id"].String(),
-		Timestamp:      ddbItem["timestamp"].String(),
+		Id:             aws.StringValue(ddbItem["id"].S),
+		Timestamp:      aws.StringValue(ddbItem["timestamp"].S),
 		Chewiness:      chewiness,
 		ProcessingTime: processingTime,
-		Data:           ddbItem["data"].String(),
+		Data:           aws.StringValue(ddbItem["data"].S),
 	}
 }

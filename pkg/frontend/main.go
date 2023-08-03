@@ -45,6 +45,29 @@ func setUpDB(sess *session.Session) *DDB {
 	return &DDB{*ddbClient, table}
 }
 
+func (d *DDB) deleteAll() error {
+	resp, err := d.client.Scan(&dynamodb.ScanInput{
+		Limit:                aws.Int64(10000),
+		Select:               aws.String(dynamodb.SelectAllAttributes),
+		TableName:            aws.String(d.table),
+		ProjectionExpression: aws.String("timestamp, id"),
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, i := range resp.Items {
+		_, err := d.client.DeleteItem(&dynamodb.DeleteItemInput{
+			Key:       i,
+			TableName: aws.String(d.table),
+		})
+		if err != nil {
+			fmt.Sprintln(fmt.Errorf("error deleting item %v: %w", i, err))
+		}
+	}
+	return nil
+}
+
 func (d *DDB) list(n int) ([]models.Item, error) {
 	limit := int64(n)
 	if n < 1 {
@@ -128,7 +151,11 @@ func main() {
 		c.Data(http.StatusOK, "application/json", bytes)
 	})
 	r.DELETE("/clear", func(c *gin.Context) {
-
+		if err := ddbClient.deleteAll(); err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+		c.Data(http.StatusOK, "text/plain", []byte("deleted all items"))
 	})
 
 	r.Run(":8080")
