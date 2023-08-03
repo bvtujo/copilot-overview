@@ -15,9 +15,10 @@ phases:
   build:
     commands:
       - echo "building static site"
-      - cd static/my-copilot-static-site
+      - cd static
       - npm ci
       - npm run build
+      - cd ..
   post_build:
     commands:
       - ls -l
