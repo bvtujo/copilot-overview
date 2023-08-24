@@ -6,7 +6,7 @@
 name: static
 type: Static Site
 files:
-  - source: static/my-copilot-static-site/public
+  - source: static/public
     recursive: true
 
 # You can override any of the values defined above by environment.
