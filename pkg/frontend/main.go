@@ -101,6 +101,8 @@ func main() {
 		c.Status(http.StatusOK)
 	})
 	//ddbClient, err := setUpDB()
+	fmt.Println("logging change")
+
 	r.POST("/post", func(c *gin.Context) {
 		id := c.Query("id")
 		chewinessRaw := c.Query("chewiness")
