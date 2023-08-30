@@ -19,6 +19,7 @@ phases:
       - npm ci
       - npm run build
       - cd ..
+      - git rev-parse HEAD
   post_build:
     commands:
       - ls -l
